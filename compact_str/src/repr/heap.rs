@@ -27,6 +27,9 @@ pub(crate) struct HeapBuffer {
     pub(crate) ptr: ptr::NonNull<u8>,
     pub(crate) len: usize,
     pub(crate) cap: Capacity,
+    #[cfg(all(target_pointer_width = "64", target_address_width = "32"))]
+    #[allow(unused)]
+    pub(crate) _unused: usize,
 }
 static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
@@ -45,7 +48,19 @@ impl HeapBuffer {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
 
-        Ok(HeapBuffer { ptr, len, cap })
+        #[cfg(not(all(target_pointer_width = "64", target_address_width = "32")))]
+        {
+            Ok(HeapBuffer { ptr, len, cap })
+        }
+        #[cfg(all(target_pointer_width = "64", target_address_width = "32"))]
+        {
+            Ok(HeapBuffer {
+                ptr,
+                len,
+                cap,
+                _unused: 0,
+            })
+        }
     }
 
     /// Create an empty [`HeapBuffer`] with a specific capacity
@@ -54,7 +69,19 @@ impl HeapBuffer {
         let len = 0;
         let (cap, ptr) = allocate_ptr(capacity)?;
 
-        Ok(HeapBuffer { ptr, len, cap })
+        #[cfg(not(all(target_pointer_width = "64", target_address_width = "32")))]
+        {
+            Ok(HeapBuffer { ptr, len, cap })
+        }
+        #[cfg(all(target_pointer_width = "64", target_address_width = "32"))]
+        {
+            Ok(HeapBuffer {
+                ptr,
+                len,
+                cap,
+                _unused: 0,
+            })
+        }
     }
 
     /// Create a [`HeapBuffer`] with `text` that has _at least_ `additional` bytes of capacity
@@ -74,7 +101,19 @@ impl HeapBuffer {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
 
-        Ok(HeapBuffer { ptr, len, cap })
+        #[cfg(not(all(target_pointer_width = "64", target_address_width = "32")))]
+        {
+            Ok(HeapBuffer { ptr, len, cap })
+        }
+        #[cfg(all(target_pointer_width = "64", target_address_width = "32"))]
+        {
+            Ok(HeapBuffer {
+                ptr,
+                len,
+                cap,
+                _unused: 0,
+            })
+        }
     }
 
     /// Return the capacity of the [`HeapBuffer`]
@@ -468,10 +507,10 @@ mod test {
         let mut h = HeapBuffer::new(s).unwrap();
 
         cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
+            if #[cfg(target_address_width = "64")] {
                 let expected_result = Ok(EIGHTEEN_MB);
                 let expected_capacity = EIGHTEEN_MB;
-            } else if #[cfg(target_pointer_width = "32")] {
+            } else if #[cfg(target_address_width = "32")] {
                 // on 32-bit architectures we'd need to change the layout from capacity being inline
                 // to the capacity being on the heap, which isn't possible
                 let expected_result = Err(());

@@ -23,7 +23,7 @@ const HEAP_MARKER: usize = {
 ///
 /// All bytes `255`, with the last being [`LastByte::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
-#[cfg(not(target_pointer_width = "64"))]
+#[cfg(not(target_address_width = "64"))]
 const CAPACITY_IS_ON_THE_HEAP: Capacity = Capacity(VALID_MASK | HEAP_MARKER);
 
 /// The maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2.
@@ -67,12 +67,12 @@ impl Capacity {
     #[inline]
     pub(crate) const fn new(capacity: usize) -> Self {
         cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
+            if #[cfg(target_address_width = "64")] {
                 // on 64-bit arches we can always fit the capacity inline
                 debug_assert!(capacity <= MAX_VALUE);
 
                 Capacity(capacity.to_le() | HEAP_MARKER)
-            } else if #[cfg(target_pointer_width = "32")] {
+            } else if #[cfg(target_address_width = "32")] {
                 // on 32-bit arches we might need to store the capacity on the heap
                 if capacity > MAX_VALUE {
                     // if we need the last byte to encode this capacity then we need to put the capacity on
@@ -84,7 +84,7 @@ impl Capacity {
                     Capacity(capacity.to_le() | HEAP_MARKER)
                 }
             } else {
-                compile_error!("Unsupported target_pointer_width");
+                compile_error!("Unsupported target_address_width");
             }
         }
     }
@@ -103,7 +103,7 @@ impl Capacity {
     #[inline(always)]
     pub(crate) fn is_heap(self) -> bool {
         cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
+            if #[cfg(target_address_width = "64")] {
                 false
             } else {
                 self == CAPACITY_IS_ON_THE_HEAP
@@ -130,9 +130,9 @@ mod tests {
         let available_bytes = (core::mem::size_of::<usize>() - 1) as u32;
         let max_value = 2usize.pow(available_bytes * 8) - 2;
 
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(target_address_width = "64")]
         assert_eq!(max_value, 72057594037927934);
-        #[cfg(target_pointer_width = "32")]
+        #[cfg(target_address_width = "32")]
         assert_eq!(max_value, 16777214);
 
         let cap = Capacity::new(max_value);
@@ -141,7 +141,7 @@ mod tests {
         assert_eq!(max_value, after);
     }
 
-    #[cfg(target_pointer_width = "32")]
+    #[cfg(target_address_width = "32")]
     #[test]
     fn test_invalid_value() {
         let invalid_val = usize::MAX;
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_all_valid_32bit_values() {
-        #[cfg(target_pointer_width = "32")]
+        #[cfg(target_address_width = "32")]
         assert_eq!(16_777_214, super::MAX_VALUE);
 
         for i in 0..=16_777_214 {

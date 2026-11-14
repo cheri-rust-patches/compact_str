@@ -109,14 +109,14 @@ impl_IntoRepr!(i32, u32);
 impl_IntoRepr!(u64, u64);
 impl_IntoRepr!(i64, u64);
 
-#[cfg(target_pointer_width = "32")]
+#[cfg(target_address_width = "32")]
 impl_IntoRepr!(usize, u32);
-#[cfg(target_pointer_width = "32")]
+#[cfg(target_address_width = "32")]
 impl_IntoRepr!(isize, u32);
 
-#[cfg(target_pointer_width = "64")]
+#[cfg(target_address_width = "64")]
 impl_IntoRepr!(usize, u64);
-#[cfg(target_pointer_width = "64")]
+#[cfg(target_address_width = "64")]
 impl_IntoRepr!(isize, u64);
 
 /// For 128-bit integer types we use the [`itoa`] crate because writing into a buffer, and then
@@ -386,12 +386,12 @@ impl NumChars for i64 {
 
 impl NumChars for usize {
     fn num_chars(val: usize) -> usize {
-        #[cfg(target_pointer_width = "32")]
+        #[cfg(target_address_width = "32")]
         {
             u32::num_chars(val as u32)
         }
 
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(target_address_width = "64")]
         {
             u64::num_chars(val as u64)
         }
@@ -400,12 +400,12 @@ impl NumChars for usize {
 
 impl NumChars for isize {
     fn num_chars(val: isize) -> usize {
-        #[cfg(target_pointer_width = "32")]
+        #[cfg(target_address_width = "32")]
         {
             i32::num_chars(val as i32)
         }
 
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(target_address_width = "64")]
         {
             i64::num_chars(val as i64)
         }
