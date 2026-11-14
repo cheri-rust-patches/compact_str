@@ -100,9 +100,9 @@ mod test {
     #[test]
     fn test_from_utf8_packed() {
         cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
+            if #[cfg(target_address_width = "64")] {
                 let packed = "this string is 24 chars!";
-            } else if #[cfg(target_pointer_width = "32")] {
+            } else if #[cfg(target_address_width = "32")] {
                 let packed = "i am 12 char";
             } else {
                 compile_error!("unsupported architecture!")

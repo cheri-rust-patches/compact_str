@@ -3,12 +3,16 @@ use core::ptr;
 use super::{Repr, LENGTH_MASK, MAX_SIZE};
 
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
-#[cfg(target_pointer_width = "64")]
+#[cfg(target_address_width = "64")]
 #[repr(C, align(8))]
 pub(crate) struct InlineBuffer(pub(crate) [u8; MAX_SIZE]);
 
-#[cfg(target_pointer_width = "32")]
+#[cfg(all(target_address_width = "32", not(target_pointer_width = "64")))]
 #[repr(C, align(4))]
+pub(crate) struct InlineBuffer(pub(crate) [u8; MAX_SIZE]);
+
+#[cfg(all(target_address_width = "32", target_pointer_width = "64"))]
+#[repr(C, align(8))]
 pub(crate) struct InlineBuffer(pub(crate) [u8; MAX_SIZE]);
 
 static_assertions::assert_eq_size!(InlineBuffer, Repr);

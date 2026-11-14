@@ -47,7 +47,7 @@ pub(crate) struct Repr(
     /// Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
     usize,
     /// ...but the second we breakup into multiple pieces...
-    #[cfg(target_pointer_width = "64")]
+ //   #[cfg(target_address_width = "64")]
     u32,
     u16,
     u8,
@@ -170,7 +170,16 @@ impl Repr {
             let raw_ptr = s.as_mut_ptr();
 
             let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
-            let heap = HeapBuffer { ptr, len, cap };
+
+            let heap = {
+                #[cfg(not(all(target_pointer_width = "64", target_address_width = "32")))]
+                {
+                HeapBuffer { ptr, len, cap }
+                }
+
+                #[cfg(all(target_pointer_width = "64", target_address_width = "32"))]
+                {
+                HeapBuffer { ptr, len, cap, _unused: 0 }                    }};
 
             Ok(Repr::from_heap(heap))
         }
@@ -608,9 +617,9 @@ impl Repr {
     #[inline(always)]
     const fn last_byte(&self) -> u8 {
         cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
+            if #[cfg(target_address_width = "64")] {
                 let last_byte = self.5;
-            } else if #[cfg(target_pointer_width = "32")] {
+            } else if #[cfg(target_address_width = "32")] {
                 let last_byte = self.4;
             } else {
                 compile_error!("Unsupported target_pointer_width");
